@@ -3,7 +3,6 @@ require('dotenv').config();
 const express = require('express');
 const querystring = require('querystring');
 const axios = require('axios');
-const { query } = require('express');
 
 const app = express();
 const port = 8888;
@@ -34,7 +33,11 @@ app.get('/login', (req, res) => {
   const state = generateRandomString(16);
   res.cookie(stateKey, state);
 
-  const scope = 'user-read-private user-read-email';
+  const scope = [
+    'user-read-private',
+    'user-read-email',
+    'user-top-read',
+  ].join(' ');
 
   const queryParams = querystring.stringify({
     client_id: CLIENT_ID,
@@ -67,19 +70,17 @@ app.get('/callback', (req, res) => {
     .then(response => {
       if (response.status === 200) {
         const { access_token, refresh_token, expires_in } = response.data;
+
         const queryParams = querystring.stringify({
           access_token,
           refresh_token,
           expires_in,
-        })
+        });
 
-        //redirect to react app
-        res.redirect(`http://localhost:3000/?${queryParams}`)
-        //pass along tokens in query params
-
+        res.redirect(`http://localhost:3000/?${queryParams}`);
 
       } else {
-        res.redirect(`/?${querystring.stringify({ error: 'invalid token'})}`);
+        res.redirect(`/?${querystring.stringify({ error: 'invalid_token' })}`);
       }
     })
     .catch(error => {
